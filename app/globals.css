@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0a0b0d;
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0b0d;
+  --color-primary: #2081e2;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3f4f6;
+  --color-secondary-foreground: #0a0b0d;
+  --color-accent: #f3f4f6;
+  --color-accent-foreground: #0a0b0d;
+  --color-border: #e5e8eb;
+  --color-muted: #8a939b;
+  --color-muted-foreground: #8a939b;
+  --radius-default: 0.75rem;
+}
+
+.dark {
+  --color-background: #0a0b0d;
+  --color-foreground: #ffffff;
+  --color-card: #151c22;
+  --color-card-foreground: #ffffff;
+  --color-primary: #2081e2;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #1b2129;
+  --color-secondary-foreground: #ffffff;
+  --color-accent: #1b2129;
+  --color-accent-foreground: #ffffff;
+  --color-border: #2a3441;
+  --color-muted: #8a939b;
+  --color-muted-foreground: #8a939b;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Ensure SVGs render properly */
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
