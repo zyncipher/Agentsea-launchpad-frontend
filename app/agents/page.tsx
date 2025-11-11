@@ -1,23 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { TrendingUp, Star, Search } from "lucide-react";
+import { fetchAllAgents } from "@/lib/solana";
 
 export default function AgentsPage() {
+  const { connection } = useConnection();
   const [searchQuery, setSearchQuery] = useState("");
+  const [agents, setAgents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - will be replaced with real data from blockchain
-  const agents = [
-    {
-      id: 0,
-      name: "AI Trading Bot",
-      description: "Automated crypto trading agent with risk management",
-      totalStaked: "1,250,000",
-      reputation: 95,
-      feedbackCount: 42,
-    },
-    // Add more mock agents here
-  ];
+  useEffect(() => {
+    const loadAgents = async () => {
+      setIsLoading(true);
+      try {
+        const fetchedAgents = await fetchAllAgents(connection);
+        setAgents(fetchedAgents);
+      } catch (error) {
+        console.error("Error fetching agents:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAgents();
+  }, [connection]);
+
+  const filteredAgents = agents.filter((agent) =>
+    agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    agent.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -44,23 +57,33 @@ export default function AgentsPage() {
 
       {/* Agents Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {agents.length === 0 ? (
+        {isLoading ? (
+          <div className="col-span-full text-center py-20">
+            <p className="text-muted-foreground">Loading agents...</p>
+          </div>
+        ) : filteredAgents.length === 0 ? (
           <div className="col-span-full text-center py-20">
             <Bot className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Agents Yet</h3>
+            <h3 className="text-xl font-semibold mb-2">
+              {searchQuery ? "No agents found" : "No Agents Yet"}
+            </h3>
             <p className="text-muted-foreground mb-6">
-              Be the first to register an AI agent on the marketplace
+              {searchQuery
+                ? "Try adjusting your search query"
+                : "Be the first to register an AI agent on the marketplace"}
             </p>
-            <a
-              href="/register"
-              className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 font-medium transition-colors"
-            >
-              Register Agent
-            </a>
+            {!searchQuery && (
+              <a
+                href="/register"
+                className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 font-medium transition-colors"
+              >
+                Register Agent
+              </a>
+            )}
           </div>
         ) : (
-          agents.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} />
+          filteredAgents.map((agent, index) => (
+            <AgentCard key={agent.publicKey || index} agent={agent} />
           ))
         )}
       </div>
@@ -69,37 +92,68 @@ export default function AgentsPage() {
 }
 
 function AgentCard({ agent }: { agent: any }) {
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
+  // Format total staked amount (convert from lamports to tokens if needed)
+  const formatStaked = (amount: number) => {
+    if (amount >= 1_000_000) {
+      return `${(amount / 1_000_000).toFixed(1)}M`;
+    } else if (amount >= 1_000) {
+      return `${(amount / 1_000).toFixed(1)}K`;
+    }
+    return amount.toString();
+  };
+
   return (
     <div className="p-6 bg-card border border-border rounded-lg hover:border-primary transition-colors">
+      {/* Agent Image */}
+      {agent.imageUrl && (
+        <div className="mb-4 rounded-lg overflow-hidden bg-muted">
+          <img
+            src={agent.imageUrl}
+            alt={agent.name}
+            className="w-full h-48 object-cover"
+            onError={(e) => {
+              // Hide image if it fails to load
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-xl font-semibold mb-1">{agent.name}</h3>
-          <p className="text-sm text-muted-foreground">Agent #{agent.id}</p>
+          <p className="text-sm text-muted-foreground">Agent #{agent.agentId?.toString() || 0}</p>
         </div>
         <div className="flex items-center gap-1 text-yellow-500">
           <Star className="h-4 w-4 fill-current" />
-          <span className="font-semibold">{agent.reputation}</span>
+          <span className="font-semibold">{agent.reputationScore || 0}</span>
         </div>
       </div>
 
-      <p className="text-muted-foreground mb-4 line-clamp-2">
-        {agent.description}
-      </p>
+      <div className="relative mb-4">
+        <p
+          className={`text-muted-foreground ${!showFullDescription ? 'line-clamp-2' : ''} cursor-pointer hover:text-foreground transition-colors`}
+          onClick={() => setShowFullDescription(!showFullDescription)}
+          onMouseEnter={() => setShowFullDescription(true)}
+          onMouseLeave={() => setShowFullDescription(false)}
+          title="Click or hover to expand"
+        >
+          {agent.description}
+        </p>
+      </div>
 
-      <div className="flex items-center justify-between text-sm mb-4">
+      <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-1">
           <TrendingUp className="h-4 w-4 text-primary" />
-          <span className="font-semibold">{agent.totalStaked}</span>
+          <span className="font-semibold">{formatStaked(agent.totalStaked || 0)}</span>
           <span className="text-muted-foreground">staked</span>
         </div>
         <div className="text-muted-foreground">
-          {agent.feedbackCount} reviews
+          {agent.feedbackCount || 0} reviews
         </div>
       </div>
-
-      <button className="w-full inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 font-medium transition-colors">
-        View Details
-      </button>
     </div>
   );
 }

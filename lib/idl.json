@@ -1,0 +1,534 @@
+{
+  "version": "0.1.0",
+  "name": "agentsea_launchpad",
+  "instructions": [
+    {
+      "name": "initializeLaunchpad",
+      "docs": [
+        "Initialize the launchpad global state"
+      ],
+      "accounts": [
+        {
+          "name": "launchpad",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "agentsTokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "minStakeAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "registerAgent",
+      "docs": [
+        "Register a new agent (like minting an NFT identity)"
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "launchpad",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "metadataUri",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "stakeToAgent",
+      "docs": [
+        "Stake $AGENTS tokens to an agent"
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "launchpad",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "staker",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakerTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "agentsTokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "unstakeFromAgent",
+      "docs": [
+        "Unstake $AGENTS tokens from an agent"
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "launchpad",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "staker",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakerTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "giveFeedback",
+      "docs": [
+        "Give feedback to an agent"
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "feedback",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reviewer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "score",
+          "type": "u8"
+        },
+        {
+          "name": "commentUri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "updateAgentMetadata",
+      "docs": [
+        "Update agent metadata (only owner)"
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "newMetadataUri",
+          "type": "string"
+        },
+        {
+          "name": "newDescription",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Launchpad",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "agentCount",
+            "type": "u64"
+          },
+          {
+            "name": "minStakeAmount",
+            "type": "u64"
+          },
+          {
+            "name": "agentsTokenMint",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Agent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agentId",
+            "type": "u64"
+          },
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "metadataUri",
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "name": "totalStaked",
+            "type": "u64"
+          },
+          {
+            "name": "reputationScore",
+            "type": "u8"
+          },
+          {
+            "name": "feedbackCount",
+            "type": "u32"
+          },
+          {
+            "name": "isActive",
+            "type": "bool"
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StakeAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "type": "publicKey"
+          },
+          {
+            "name": "staker",
+            "type": "publicKey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "stakedAt",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Feedback",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "type": "publicKey"
+          },
+          {
+            "name": "reviewer",
+            "type": "publicKey"
+          },
+          {
+            "name": "score",
+            "type": "u8"
+          },
+          {
+            "name": "commentUri",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "AgentRegistered",
+      "fields": [
+        {
+          "name": "agentId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "owner",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "TokensStaked",
+      "fields": [
+        {
+          "name": "agentId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "staker",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "TokensUnstaked",
+      "fields": [
+        {
+          "name": "agentId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "staker",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "FeedbackGiven",
+      "fields": [
+        {
+          "name": "agentId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "reviewer",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "score",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NameTooLong",
+      "msg": "Name is too long (max 50 characters)"
+    },
+    {
+      "code": 6001,
+      "name": "UriTooLong",
+      "msg": "URI is too long (max 200 characters)"
+    },
+    {
+      "code": 6002,
+      "name": "DescriptionTooLong",
+      "msg": "Description is too long (max 500 characters)"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidAmount",
+      "msg": "Invalid amount (must be > 0)"
+    },
+    {
+      "code": 6004,
+      "name": "StakeTooLow",
+      "msg": "Stake amount is below minimum required"
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientStake",
+      "msg": "Insufficient stake in account"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidScore",
+      "msg": "Invalid score (must be 0-100)"
+    },
+    {
+      "code": 6007,
+      "name": "Unauthorized",
+      "msg": "Unauthorized operation"
+    },
+    {
+      "code": 6008,
+      "name": "MathOverflow",
+      "msg": "Math overflow"
+    }
+  ],
+  "metadata": {
+    "address": "DZxHnHSzHfgoYd5qpjvxY67BRmS4Du6kjAZD5v4TPyWT"
+  }
+}

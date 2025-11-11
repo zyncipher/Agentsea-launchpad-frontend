@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { AlertCircle, CheckCircle2, Upload, X, Image as ImageIcon } from "lucide-react";
 import { AgentMetadata } from "@/lib/ipfs";
+import { registerAgent } from "@/lib/solana";
 
 export default function RegisterPage() {
-  const { connected } = useWallet();
+  const wallet = useWallet();
+  const { connection } = useConnection();
+  const { connected } = wallet;
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -153,8 +156,14 @@ export default function RegisterPage() {
       setMetadataUri(metadataUrl);
 
       // Step 3: Register agent on Solana blockchain
-      // TODO: Integrate with Solana program
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const txSignature = await registerAgent({
+        name: formData.name,
+        metadataUri: metadataUrl,
+        description: formData.description,
+        wallet,
+        connection,
+      });
+      console.log("Agent registered on blockchain! TX:", txSignature);
 
       setSuccess(true);
       setFormData({ name: "", description: "", category: "" });

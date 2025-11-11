@@ -15,7 +15,14 @@ export function SolanaWalletProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const endpoint = useMemo(() => clusterApiUrl("devnet"), []);
+  const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet";
+
+  const endpoint = useMemo(() => {
+    if (network === "localnet") {
+      return process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "http://localhost:8899";
+    }
+    return clusterApiUrl(network as any);
+  }, [network]);
 
   const wallets = useMemo(
     () => [

@@ -1,10 +1,35 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { Bot, TrendingUp, Star, Shield, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { HeroIllustration, EmptyStateIllustration, WhyAgentSeaIllustration } from "@/components/illustrations";
+import { fetchAllAgents } from "@/lib/solana";
 
 export default function Home() {
+  const { connection } = useConnection();
+  const [agents, setAgents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAgents = async () => {
+      setIsLoading(true);
+      try {
+        const fetchedAgents = await fetchAllAgents(connection);
+        setAgents(fetchedAgents);
+      } catch (error) {
+        console.error("Error fetching agents:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAgents();
+  }, [connection]);
+
+  // Show top 4 agents for homepage
+  const featuredAgents = agents.slice(0, 4);
   return (
     <div className="min-h-screen">
       {/* Hero Section with Gradient Background */}
@@ -56,9 +81,12 @@ export default function Home() {
       <section className="border-y border-border bg-card/50 backdrop-blur">
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <StatItem number="0" label="Total Agents" />
+            <StatItem number={agents.length.toString()} label="Total Agents" />
             <StatItem number="0 SOL" label="Total Volume" />
-            <StatItem number="0" label="Total Stakes" />
+            <StatItem
+              number={agents.reduce((sum, agent) => sum + (agent.totalStaked || 0), 0).toString()}
+              label="Total Stakes"
+            />
             <StatItem number="0" label="Active Users" />
           </div>
         </div>
@@ -74,24 +102,33 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Empty State */}
-          <div className="col-span-full">
-            <div className="text-center py-20 bg-card border border-border rounded-2xl">
-              <div className="max-w-xs mx-auto mb-6">
-                <EmptyStateIllustration />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">No Agents Yet</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Be the first to register an AI agent on the marketplace and start building trust
-              </p>
-              <Link
-                href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-6 font-medium transition-colors"
-              >
-                Register First Agent
-              </Link>
+          {isLoading ? (
+            <div className="col-span-full text-center py-20">
+              <p className="text-muted-foreground">Loading agents...</p>
             </div>
-          </div>
+          ) : featuredAgents.length === 0 ? (
+            <div className="col-span-full">
+              <div className="text-center py-20 bg-card border border-border rounded-2xl">
+                <div className="max-w-xs mx-auto mb-6">
+                  <EmptyStateIllustration />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No Agents Yet</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Be the first to register an AI agent on the marketplace and start building trust
+                </p>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-6 font-medium transition-colors"
+                >
+                  Register First Agent
+                </Link>
+              </div>
+            </div>
+          ) : (
+            featuredAgents.map((agent, index) => (
+              <AgentCard key={agent.publicKey || index} agent={agent} />
+            ))
+          )}
         </div>
       </section>
 
@@ -235,6 +272,58 @@ function BenefitItem({
       <div>
         <h3 className="font-semibold text-lg mb-1">{title}</h3>
         <p className="text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function AgentCard({ agent }: { agent: any }) {
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
+  // Format total staked amount
+  const formatStaked = (amount: number) => {
+    if (amount >= 1_000_000) {
+      return `${(amount / 1_000_000).toFixed(1)}M`;
+    } else if (amount >= 1_000) {
+      return `${(amount / 1_000).toFixed(1)}K`;
+    }
+    return amount.toString();
+  };
+
+  return (
+    <div className="p-6 bg-card border border-border rounded-lg hover:border-primary transition-colors">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-xl font-semibold mb-1">{agent.name}</h3>
+          <p className="text-sm text-muted-foreground">Agent #{agent.agentId?.toString() || 0}</p>
+        </div>
+        <div className="flex items-center gap-1 text-yellow-500">
+          <Star className="h-4 w-4 fill-current" />
+          <span className="font-semibold">{agent.reputationScore || 0}</span>
+        </div>
+      </div>
+
+      <div className="relative mb-4">
+        <p
+          className={`text-muted-foreground ${!showFullDescription ? 'line-clamp-2' : ''} cursor-pointer hover:text-foreground transition-colors`}
+          onClick={() => setShowFullDescription(!showFullDescription)}
+          onMouseEnter={() => setShowFullDescription(true)}
+          onMouseLeave={() => setShowFullDescription(false)}
+          title="Click or hover to expand"
+        >
+          {agent.description}
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-1">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          <span className="font-semibold">{formatStaked(agent.totalStaked || 0)}</span>
+          <span className="text-muted-foreground">staked</span>
+        </div>
+        <div className="text-muted-foreground">
+          {agent.feedbackCount || 0} reviews
+        </div>
       </div>
     </div>
   );
