@@ -1,6 +1,5 @@
 # AgentSea Launchpad - Frontend
-
-A modern, sleek frontend for the AgentSea Launchpad built with Next.js, TypeScript, and Tailwind CSS. Features dark/light mode and full Solana wallet integration.
+**Deployed at - https://agentsea-frontend-sigma.vercel.app/** <br>
 
 
 ## Pages
